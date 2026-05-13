@@ -85,7 +85,7 @@ export default function Home() {
   const [stocks, setStocks] = useState<any[]>([]);
 
   useEffect(() => {
-    fetch("http://localhost:8000/api/stocks")
+    fetch("https://stock-beginner-site.onrender.com")
       .then((res) => res.json())
       .then((data) => setStocks(data))
       .catch((err) => console.error(err));
