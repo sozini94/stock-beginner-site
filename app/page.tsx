@@ -386,7 +386,7 @@ export default function Home() {
               </div>
 
               {/* 현재 상태 */}
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+              <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-5">
                 <p className="text-sm font-semibold text-white">
                   현재 크로스 상태
                 </p>
