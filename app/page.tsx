@@ -64,12 +64,16 @@ type EtfAnalysis = {
   trend: string;
   positionText: string;
   summary: string;
+  crossSignal: string;
+  crossAnalysis: string;
+  candleAnalysis: string;
   caution: string;
   support: number;
   resistance: number;
   distanceToSupport: number;
   distanceToResistance: number;
   supportResistanceAnalysis: string;
+  aiSummary: string;
   chartData: {
     date: string;
     open: number;
@@ -81,14 +85,49 @@ type EtfAnalysis = {
     ma20: number | null;
   }[];
 };
+
+type StockAnalysis = {
+  name: string;
+  ticker: string;
+  close: number;
+  change: number;
+  changeRate: number;
+  ma5: number;
+  ma20: number;
+  trend: string;
+  summary: string;
+  crossSignal: string;
+  crossAnalysis: string;
+  candleAnalysis: string;
+  support: number;
+  resistance: number;
+  distanceToSupport: number;
+  distanceToResistance: number;
+  supportResistanceAnalysis: string;
+  aiSummary: string;
+  chartData: {
+    date: string;
+    open: number;
+    high: number;
+    low: number;
+    close: number;
+    ma5: number | null;
+    ma20: number | null;
+  }[];
+};
 export default function Home() {
-  const [stocks, setStocks] = useState<any[]>([]);
+  const [stocks, setStocks] = useState<StockAnalysis[]>([]);
 
   useEffect(() => {
     fetch("https://stock-beginner-site.onrender.com/api/stocks")
-      .then((res) => res.json())
-      .then((data) => setStocks(data))
-      .catch((err) => console.error(err));
+    .then((res) => res.json())
+    .then((data) => {
+      console.log("API DATA:", data);
+      console.log("FIRST STOCK:", data[0]);
+      console.log("CROSS:", data[0]?.crossSignal);
+      setStocks(data);
+    })
+    .catch((err) => console.error(err));
   }, []);
   return (
     <main className="min-h-screen bg-slate-950 text-white">
@@ -294,8 +333,8 @@ export default function Home() {
                   AI 차트 요약
                 </p>
 
-                <p className="mt-3 text-sm leading-7 text-slate-300">
-                  {stock.aiSummary}
+                <p className="mt-3 text-sm leading-6 text-slate-300">
+                  {stock.aiSummary || "AI 요약을 불러오는 중이에요."}
                 </p>
               </div>
               {/* 현재 상태 */}
@@ -313,11 +352,11 @@ export default function Home() {
                       : "text-slate-200"
                   }`}
                 >
-                  {stock.crossSignal}
+                  {stock.crossSignal || "분석 중"}
                 </h4>
 
                 <p className="mt-3 text-sm leading-6 text-slate-300">
-                  {stock.crossAnalysis}
+                  {stock.crossAnalysis || "이동평균선 흐름을 분석하고 있어요."}
                 </p>
               </div>
             </div>

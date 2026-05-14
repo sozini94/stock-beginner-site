@@ -154,8 +154,7 @@ def analyze_stock(ticker):
             "ma5": None if row["MA5"] != row["MA5"] else round(float(row["MA5"]), 2),
             "ma20": None if row["MA20"] != row["MA20"] else round(float(row["MA20"]), 2),
         })
-
-    return {
+    result = {
         "name": name,
         "ticker": ticker,
         "close": int(close),
@@ -165,14 +164,28 @@ def analyze_stock(ticker):
         "ma20": round(ma20, 2),
         "trend": trend,
         "summary": summary,
+        "crossSignal": crossSignal,
+        "crossAnalysis": crossAnalysis,
         "candleAnalysis": candle_analysis,
-        "chartData": chart_data,
         "support": int(support),
         "resistance": int(resistance),
         "distanceToSupport": round(distance_to_support, 2),
         "distanceToResistance": round(distance_to_resistance, 2),
         "supportResistanceAnalysis": support_resistance_analysis,
+        "chartData": chart_data,
     }
+
+    result["aiSummary"] = generate_free_ai_summary(
+        trend,
+        crossSignal,
+        candle_analysis,
+        support_resistance_analysis,
+        close,
+        ma5,
+        ma20,
+    )
+
+    return result
 
 def generate_free_ai_summary(
     trend,
