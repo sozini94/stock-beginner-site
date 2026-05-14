@@ -63,6 +63,21 @@ def analyze_stock(ticker):
     ma5 = float(latest["MA5"])
     ma20 = float(latest["MA20"])
 
+    # RSI 계산
+    delta = df["종가"].diff()
+
+    gain = delta.where(delta > 0, 0)
+    loss = -delta.where(delta < 0, 0)
+
+    avg_gain = gain.rolling(window=14).mean()
+    avg_loss = loss.rolling(window=14).mean()
+
+    rs = avg_gain / avg_loss
+
+    df["RSI"] = 100 - (100 / (1 + rs))
+
+    rsi = float(latest["RSI"])
+
     prev_ma5 = float(previous["MA5"])
     prev_ma20 = float(previous["MA20"])
 
@@ -79,6 +94,21 @@ def analyze_stock(ticker):
         else:
             crossAnalysis = "현재 5일선이 20일선 아래에 있어 단기 흐름이 아직 약한 상태예요."
 
+    if rsi >= 70:
+        rsiStatus = "과열 구간"
+        rsiAnalysis = (
+            "최근 상승세가 강했어요. 단기적으로 과열 구간으로 보는 경우가 많아요."
+        )
+    elif rsi <= 30:
+        rsiStatus = "과매도 구간"
+        rsiAnalysis = (
+            "최근 하락 압력이 강했어요. 단기적으로 과매도 구간으로 보는 경우가 많아요."
+        )
+    else:
+        rsiStatus = "중립 구간"
+        rsiAnalysis = (
+            "현재 RSI는 중립 범위에 있어요. 과열이나 과매도 신호는 강하지 않아요."
+        )
     recent_60 = df.tail(60)
 
     resistance = float(recent_60["고가"].max())
@@ -173,6 +203,9 @@ def analyze_stock(ticker):
         "distanceToResistance": round(distance_to_resistance, 2),
         "supportResistanceAnalysis": support_resistance_analysis,
         "chartData": chart_data,
+        "rsi": round(rsi, 2),
+        "rsiStatus": rsiStatus,
+        "rsiAnalysis": rsiAnalysis,
     }
 
     result["aiSummary"] = generate_free_ai_summary(

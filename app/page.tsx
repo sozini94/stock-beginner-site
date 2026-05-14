@@ -104,6 +104,9 @@ type StockAnalysis = {
   distanceToSupport: number;
   distanceToResistance: number;
   supportResistanceAnalysis: string;
+  rsi: number;
+  rsiStatus: string,
+  rsiAnalysis: string,
   aiSummary: string;
   chartData: {
     date: string;
@@ -327,6 +330,50 @@ export default function Home() {
                   {stock.supportResistanceAnalysis}
                 </p>
               </div>
+              <div className="mt-4 rounded-2xl border border-pink-400/20 bg-pink-400/10 p-5">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-semibold text-pink-300">
+                    RSI 과열 지표
+                  </p>
+
+                  <p className="text-lg font-bold text-white">
+                    {stock.rsi}
+                  </p>
+                </div>
+
+                {/* 게이지 */}
+                <div className="mt-4 h-4 overflow-hidden rounded-full bg-slate-800">
+                  <div
+                    className={`h-full transition-all duration-500 ${
+                      stock.rsi >= 70
+                        ? "bg-red-400"
+                        : stock.rsi <= 30
+                        ? "bg-sky-400"
+                        : "bg-emerald-400"
+                    }`}
+                    style={{
+                      width: `${stock.rsi}%`,
+                    }}
+                  />
+                </div>
+
+                <div className="mt-3 flex justify-between text-xs text-slate-400">
+                  <span>0</span>
+                  <span>30</span>
+                  <span>70</span>
+                  <span>100</span>
+                </div>
+
+                <div className="mt-4">
+                  <p className="text-lg font-bold text-white">
+                    {stock.rsiStatus}
+                  </p>
+
+                  <p className="mt-2 text-sm leading-6 text-slate-300">
+                    {stock.rsiAnalysis}
+                  </p>
+                </div>
+              </div>
 
               <div className="mt-4 rounded-2xl border border-purple-400/20 bg-purple-400/10 p-5">
                 <p className="text-sm font-semibold text-purple-300">
@@ -337,6 +384,7 @@ export default function Home() {
                   {stock.aiSummary || "AI 요약을 불러오는 중이에요."}
                 </p>
               </div>
+
               {/* 현재 상태 */}
               <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
                 <p className="text-sm font-semibold text-white">
