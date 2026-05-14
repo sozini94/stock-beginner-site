@@ -157,7 +157,7 @@ export default function Home() {
 
 
       {/* Chart Education Section */}
-      <section className="mx-auto max-w-6xl px-6 py-20">
+      <section className="mx-auto max-w-6xl px-6 py-20" id="chart">
         <div className="mb-10">
           <p className="text-sm font-semibold text-emerald-300">
             LIVE STOCK ANALYSIS
