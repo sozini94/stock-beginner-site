@@ -7,20 +7,33 @@ import {
   LineSeries,
 } from "lightweight-charts";
 
+type ChartItem = {
+  date: string;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  ma5?: number | null;
+  ma20?: number | null;
+};
+
+type HoverData = {
+    time: string;
+    open: number;
+    high: number;
+    low: number;
+    close: number;
+};
+
 type Props = {
-  data: any[];
+  data: ChartItem[];
   support?: number;
   resistance?: number;
 };
 
-export default function StockChart({
-  data,
-  support,
-  resistance,
-}: Props) {
+export default function StockChart({ data, support, resistance }: Props) {
   const chartContainerRef = useRef<HTMLDivElement>(null);
-
-  const [hoverData, setHoverData] = useState<any>(null);
+  const [hoverData, setHoverData] = useState<HoverData | null>(null);
 
   useEffect(() => {
     if (!chartContainerRef.current || !data.length) return;
@@ -28,30 +41,24 @@ export default function StockChart({
     const chart = createChart(chartContainerRef.current, {
       width: chartContainerRef.current.clientWidth,
       height: 560,
-
       layout: {
         background: { color: "#020617" },
         textColor: "#CBD5E1",
       },
-
       grid: {
         vertLines: { color: "#1E293B" },
         horzLines: { color: "#1E293B" },
       },
-
       crosshair: {
         mode: 1,
       },
-
       rightPriceScale: {
         borderColor: "#334155",
       },
-
       timeScale: {
         borderColor: "#334155",
         timeVisible: true,
       },
-
       handleScroll: true,
       handleScale: true,
     });
@@ -81,10 +88,10 @@ export default function StockChart({
 
     ma5Series.setData(
       data
-        .filter((item) => item.ma5)
+        .filter((item) => item.ma5 !== null && item.ma5 !== undefined)
         .map((item) => ({
           time: item.date,
-          value: item.ma5,
+          value: Number(item.ma5),
         }))
     );
 
@@ -95,14 +102,13 @@ export default function StockChart({
 
     ma20Series.setData(
       data
-        .filter((item) => item.ma20)
+        .filter((item) => item.ma20 !== null && item.ma20 !== undefined)
         .map((item) => ({
           time: item.date,
-          value: item.ma20,
+          value: Number(item.ma20),
         }))
     );
 
-    // 지지선
     if (support) {
       candleSeries.createPriceLine({
         price: support,
@@ -114,7 +120,6 @@ export default function StockChart({
       });
     }
 
-    // 저항선
     if (resistance) {
       candleSeries.createPriceLine({
         price: resistance,
@@ -126,16 +131,22 @@ export default function StockChart({
       });
     }
 
-    // hover 데이터
     chart.subscribeCrosshairMove((param) => {
       if (!param.time) return;
 
-      const price = param.seriesData.get(candleSeries);
+      const price = param.seriesData.get(candleSeries) as
+        | {
+            open: number;
+            high: number;
+            low: number;
+            close: number;
+          }
+        | undefined;
 
       if (!price) return;
 
       setHoverData({
-        time: param.time,
+        time: String(param.time),
         open: price.open,
         high: price.high,
         low: price.low,
@@ -161,14 +172,11 @@ export default function StockChart({
 
   return (
     <div>
-      {/* Hover 정보 */}
       {hoverData && (
         <div className="mb-4 grid grid-cols-2 gap-3 rounded-2xl bg-slate-900/80 p-4 md:grid-cols-5">
           <div>
             <p className="text-xs text-slate-400">날짜</p>
-            <p className="mt-1 font-semibold text-white">
-              {hoverData.time}
-            </p>
+            <p className="mt-1 font-semibold text-white">{hoverData.time}</p>
           </div>
 
           <div>
@@ -201,16 +209,14 @@ export default function StockChart({
         </div>
       )}
 
-      {/* 차트 */}
       <div
         ref={chartContainerRef}
         className="h-[560px] w-full overflow-hidden rounded-2xl"
       />
 
-      {/* 설명 */}
       <div className="mt-4 rounded-2xl bg-slate-900/80 p-4 text-sm leading-6 text-slate-300">
-        마우스를 차트 위에 올리면 해당 날짜의 시가, 고가, 저가, 종가를 볼 수 있어요.
-        마우스 휠로 확대/축소할 수 있고, 드래그해서 이동도 가능합니다.
+        마우스를 차트 위에 올리면 해당 날짜의 시가, 고가, 저가, 종가를 볼 수
+        있어요. 마우스 휠로 확대/축소할 수 있고, 드래그해서 이동도 가능합니다.
       </div>
     </div>
   );
