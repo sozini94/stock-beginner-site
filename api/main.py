@@ -53,17 +53,7 @@ def analyze_stock(ticker):
     df["MA5"] = df["종가"].rolling(window=5).mean()
     df["MA20"] = df["종가"].rolling(window=20).mean()
 
-    latest = df.iloc[-1]
-    previous = df.iloc[-2]
-    recent3 = df.tail(3)
-
-    close = float(latest["종가"])
-    prev_close = float(previous["종가"])
-
-    ma5 = float(latest["MA5"])
-    ma20 = float(latest["MA20"])
-
-    # RSI 계산
+        # RSI 계산
     delta = df["종가"].diff()
 
     gain = delta.where(delta > 0, 0)
@@ -75,6 +65,17 @@ def analyze_stock(ticker):
     rs = avg_gain / avg_loss
 
     df["RSI"] = 100 - (100 / (1 + rs))
+
+    latest = df.iloc[-1]
+    previous = df.iloc[-2]
+    recent3 = df.tail(3)
+
+    close = float(latest["종가"])
+    prev_close = float(previous["종가"])
+
+    ma5 = float(latest["MA5"])
+    ma20 = float(latest["MA20"])
+
 
     rsi = float(latest["RSI"])
 
