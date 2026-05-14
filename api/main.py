@@ -63,6 +63,22 @@ def analyze_stock(ticker):
     ma5 = float(latest["MA5"])
     ma20 = float(latest["MA20"])
 
+    prev_ma5 = float(previous["MA5"])
+    prev_ma20 = float(previous["MA20"])
+
+    if prev_ma5 <= prev_ma20 and ma5 > ma20:
+        crossSignal = "골든크로스"
+        crossAnalysis = "5일선이 20일선을 위로 돌파했어요. 단기 흐름이 강해지는 신호로 보는 경우가 많아요."
+    elif prev_ma5 >= prev_ma20 and ma5 < ma20:
+        crossSignal = "데드크로스"
+        crossAnalysis = "5일선이 20일선을 아래로 이탈했어요. 단기 흐름이 약해지는 신호로 보는 경우가 많아요."
+    else:
+        crossSignal = "크로스 없음"
+        if ma5 > ma20:
+            crossAnalysis = "현재 5일선이 20일선 위에 있어 단기 흐름이 중기 흐름보다 강한 상태예요."
+        else:
+            crossAnalysis = "현재 5일선이 20일선 아래에 있어 단기 흐름이 아직 약한 상태예요."
+
     recent_60 = df.tail(60)
 
     resistance = float(recent_60["고가"].max())
@@ -157,6 +173,60 @@ def analyze_stock(ticker):
         "distanceToResistance": round(distance_to_resistance, 2),
         "supportResistanceAnalysis": support_resistance_analysis,
     }
+
+def generate_free_ai_summary(
+    trend,
+    cross_signal,
+    candle_analysis,
+    support_analysis,
+    close,
+    ma5,
+    ma20,
+):
+    summary_parts = []
+
+    # 추세
+    if trend == "상승 추세":
+        summary_parts.append(
+            "현재 5일선과 20일선 위에서 움직이며 상승 흐름이 이어지고 있어요."
+        )
+    elif trend == "하락 추세":
+        summary_parts.append(
+            "현재 이동평균선 아래에 있어 약세 흐름으로 볼 수 있어요."
+        )
+    else:
+        summary_parts.append(
+            "현재는 상승과 하락 힘이 혼재된 구간으로 볼 수 있어요."
+        )
+
+    # 크로스
+    if cross_signal == "골든크로스":
+        summary_parts.append(
+            "최근 5일선이 20일선을 돌파하면서 단기 상승 신호가 나타났어요."
+        )
+
+    elif cross_signal == "데드크로스":
+        summary_parts.append(
+            "최근 5일선이 20일선 아래로 내려오며 약세 신호가 나타났어요."
+        )
+
+    # 캔들
+    summary_parts.append(candle_analysis)
+
+    # 지지 저항
+    summary_parts.append(support_analysis)
+
+    # 현재 위치
+    if close > ma5 and close > ma20:
+        summary_parts.append(
+            "현재가는 주요 이동평균선 위에 있어 상대적으로 강한 흐름이에요."
+        )
+    else:
+        summary_parts.append(
+            "현재가는 이동평균선 아래에 있어 아직은 조심할 필요가 있어요."
+        )
+
+    return " ".join(summary_parts)
 def get_etf_analysis():
     end = datetime.today()
     start = end - timedelta(days=120)

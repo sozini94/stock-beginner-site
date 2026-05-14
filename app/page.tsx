@@ -289,42 +289,36 @@ export default function Home() {
                 </p>
               </div>
 
-              {/* 선 설명 */}
-              <div className="mt-6 grid gap-4 md:grid-cols-3">
-                <div className="rounded-2xl border border-emerald-400/20 bg-emerald-400/10 p-5">
-                  <p className="text-sm font-semibold text-emerald-300">
-                    초록색 선: 5일선
-                  </p>
+              <div className="mt-4 rounded-2xl border border-purple-400/20 bg-purple-400/10 p-5">
+                <p className="text-sm font-semibold text-purple-300">
+                  AI 차트 요약
+                </p>
 
-                  <p className="mt-3 text-sm leading-6 text-slate-300">
-                    최근 5거래일 평균 가격을 이은 선이에요. 단기 흐름을 보여줘요.
-                    가격이 5일선 위에 있으면 최근 매수세가 강하다고 볼 수 있어요.
-                  </p>
-                </div>
+                <p className="mt-3 text-sm leading-7 text-slate-300">
+                  {stock.aiSummary}
+                </p>
+              </div>
+              {/* 현재 상태 */}
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+                <p className="text-sm font-semibold text-white">
+                  현재 크로스 상태
+                </p>
 
-                <div className="rounded-2xl border border-sky-400/20 bg-sky-400/10 p-5">
-                  <p className="text-sm font-semibold text-sky-300">
-                    파란색 선: 20일선
-                  </p>
+                <h4
+                  className={`mt-3 text-xl font-bold ${
+                    stock.crossSignal === "골든크로스"
+                      ? "text-yellow-300"
+                      : stock.crossSignal === "데드크로스"
+                      ? "text-red-300"
+                      : "text-slate-200"
+                  }`}
+                >
+                  {stock.crossSignal}
+                </h4>
 
-                  <p className="mt-3 text-sm leading-6 text-slate-300">
-                    최근 20거래일 평균 가격을 이은 선이에요. 약 한 달 정도의 흐름을
-                    보여줘요. 20일선이 위로 향하면 중기 상승 흐름으로 해석할 수 있어요.
-                  </p>
-                </div>
-
-                <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-                  <p className="text-sm font-semibold text-white">
-                    {stock.name} 현재 차트 해석
-                  </p>
-
-                  <p className="mt-3 text-sm leading-6 text-slate-300">
-                    현재 5일선은 {stock.ma5.toLocaleString()}원, 20일선은{" "}
-                    {stock.ma20.toLocaleString()}원입니다. 현재가가 5일선과 20일선 위에
-                    있으면 상승세가 강한 구간으로 볼 수 있고, 반대로 두 선 아래로 내려가면
-                    하락 압력이 커졌다고 해석할 수 있어요.
-                  </p>
-                </div>
+                <p className="mt-3 text-sm leading-6 text-slate-300">
+                  {stock.crossAnalysis}
+                </p>
               </div>
             </div>
           ))}
