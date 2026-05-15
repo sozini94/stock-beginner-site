@@ -3,6 +3,10 @@ from datetime import datetime, timedelta
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pykrx import stock
+from datetime import datetime, timedelta
+import pandas as pd
+import requests
+from io import StringIO
 
 app = FastAPI()
 
@@ -14,15 +18,87 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-TICKERS = {
+DEFAULT_TICKERS = {
     "360750": "TIGER 미국S&P500",
-    "005930": "삼성전자",
-    "000660": "SK하이닉스",
-    "267260": "HD현대일렉트릭",
-    "006280": "녹십자",
-    "0183J0": "TIGER 미국우주테크",
 }
 
+def search_tickers(keyword):
+    keyword = keyword.strip().replace(" ", "").lower()
+
+    if not keyword:
+        return DEFAULT_TICKERS
+
+    matched = {}
+
+    # 1) KRX 상장회사 목록 검색
+    try:
+        url = "https://kind.krx.co.kr/corpgeneral/corpList.do?method=download&searchType=13"
+        headers = {"User-Agent": "Mozilla/5.0"}
+
+        response = requests.get(url, headers=headers, timeout=10)
+        response.encoding = "euc-kr"
+
+        df = pd.read_html(StringIO(response.text))[0]
+
+        for _, row in df.iterrows():
+            name = str(row["회사명"]).strip()
+            code = str(row["종목코드"]).zfill(6)
+            normalized_name = name.replace(" ", "").lower()
+
+            if keyword in normalized_name or keyword in code:
+                matched[code] = name
+
+    except Exception as e:
+        print("KRX CSV SEARCH ERROR:", e)
+
+    # 2) pykrx 종목명 검색 보조
+    for i in range(1, 15):
+        try:
+            date = (datetime.now() - timedelta(days=i)).strftime("%Y%m%d")
+
+            for market in ["KOSPI", "KOSDAQ"]:
+                tickers = stock.get_market_ticker_list(date=date, market=market)
+
+                for ticker in tickers:
+                    name = stock.get_market_ticker_name(ticker)
+
+                    if not name:
+                        continue
+
+                    normalized_name = name.replace(" ", "").lower()
+
+                    if keyword in normalized_name or keyword in ticker:
+                        matched[ticker] = name
+
+            if matched:
+                break
+
+        except Exception as e:
+            print("PYKRX SEARCH ERROR:", e)
+
+    # 3) 우선주/대표 종목 보강
+    extra_map = {
+        "현대차": {
+            "005380": "현대차",
+            "005385": "현대차우",
+            "005387": "현대차2우B",
+            "005389": "현대차3우B",
+        },
+        "삼성전자": {
+            "005930": "삼성전자",
+            "005935": "삼성전자우",
+        },
+        "lg화학": {
+            "051910": "LG화학",
+            "051915": "LG화학우",
+        },
+    }
+
+    for base_name, items in extra_map.items():
+        if keyword in base_name.replace(" ", "").lower():
+            matched.update(items)
+
+    return matched
 
 def to_number(value):
     try:
@@ -30,17 +106,48 @@ def to_number(value):
     except Exception:
         return None
 
+@app.get("/api/search-test")
+def search_test(q: str = ""):
+    return search_tickers(q)
 
 @app.get("/api/stocks")
-def get_stocks():
+def get_stocks(q: str = ""):
+    tickers = search_tickers(q)
+
     result = []
 
-    for ticker in TICKERS.keys():
-        result.append(analyze_stock(ticker))
+    for ticker, name in tickers.items():
+        try:
+            result.append(analyze_stock(ticker, name))
+        except Exception as e:
+            result.append({
+                "name": name,
+                "ticker": ticker,
+                "error": str(e),
+                "chartData": [],
+                "aiSummary": "분석 데이터를 불러오지 못했어요.",
+                "crossSignal": "분석 실패",
+                "crossAnalysis": f"분석 중 오류가 발생했어요: {str(e)}",
+                "summary": "데이터를 불러오지 못했어요.",
+                "trend": "분석 실패",
+                "close": 0,
+                "change": 0,
+                "changeRate": 0,
+                "ma5": 0,
+                "ma20": 0,
+                "rsi": 0,
+                "rsiStatus": "분석 실패",
+                "rsiAnalysis": "RSI를 계산하지 못했어요.",
+                "support": 0,
+                "resistance": 0,
+                "distanceToSupport": 0,
+                "distanceToResistance": 0,
+                "supportResistanceAnalysis": "지지선/저항선을 계산하지 못했어요.",
+                "candleAnalysis": "캔들 분석을 계산하지 못했어요.",
+            })
 
     return result
-def analyze_stock(ticker):
-    name = TICKERS[ticker]
+def analyze_stock(ticker, name):
 
     end = datetime.today()
     start = end - timedelta(days=120)
@@ -283,12 +390,14 @@ def get_etf_analysis():
     start_date = start.strftime("%Y%m%d")
     end_date = end.strftime("%Y%m%d")
 
-    df = stock.get_market_ohlcv_by_date(start_date, end_date, TICKER)
+    df = stock.get_market_ohlcv_by_date(start_date, end_date, ticker)
+    if df.empty or len(df) < 20:
+        raise ValueError("분석에 필요한 가격 데이터가 부족합니다.")
 
     if df.empty:
         return {
-            "name": NAME,
-            "ticker": TICKER,
+            "name": name,
+            "ticker": ticker,
             "error": "데이터를 가져오지 못했습니다.",
         }
 
@@ -346,8 +455,8 @@ def get_etf_analysis():
         })
 
     return {
-        "name": NAME,
-        "ticker": TICKER,
+        "name": name,
+        "ticker": ticker,
         "close": int(close),
         "change": int(change),
         "changeRate": round(change_rate, 2),

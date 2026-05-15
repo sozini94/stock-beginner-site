@@ -119,18 +119,39 @@ type StockAnalysis = {
   }[];
 };
 export default function Home() {
-  const [stocks, setStocks] = useState<StockAnalysis[]>([]);
+  const [search, setSearch] = useState("");
+  const [stocks, setStocks] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    fetch("https://stock-beginner-site.onrender.com/api/stocks")
-    .then((res) => res.json())
-    .then((data) => {
-      console.log("API DATA:", data);
-      console.log("FIRST STOCK:", data[0]);
-      console.log("CROSS:", data[0]?.crossSignal);
+  const fetchStocks = async (keyword = "") => {
+    try {
+      setLoading(true);
+      const API_BASE =
+      process.env.NODE_ENV === "development"
+        ? "http://127.0.0.1:8000"
+        : "https://stock-beginner-site.onrender.com";
+  
+        const url = keyword
+        ? `${API_BASE}/api/stocks?q=${encodeURIComponent(keyword)}`
+        : `${API_BASE}/api/stocks`;
+  
+      const res = await fetch(url);
+  
+      if (!res.ok) {
+        throw new Error("API 요청 실패");
+      }
+  
+      const data = await res.json();
       setStocks(data);
-    })
-    .catch((err) => console.error(err));
+    } catch (err) {
+      console.error("FETCH ERROR:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  useEffect(() => {
+    fetchStocks();
   }, []);
   return (
     <main className="min-h-screen bg-slate-950 text-white">
@@ -213,6 +234,48 @@ export default function Home() {
             실제 한국 주식 데이터를 기반으로 차트와 이동평균선을 분석해요.
           </p>
         </div>
+        <div className="mb-10 flex flex-col gap-3 rounded-3xl border border-white/10 bg-white/5 p-5 md:flex-row">
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                fetchStocks(search);
+              }
+            }}
+            placeholder="종목명 또는 종목코드 검색 예: 현대차, 삼성전자, 005930"
+            className="flex-1 rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none placeholder:text-slate-500 focus:border-emerald-400"
+          />
+
+          <button
+            onClick={() => fetchStocks(search)}
+            className="rounded-xl bg-emerald-400 px-6 py-3 font-semibold text-slate-950 hover:bg-emerald-300"
+          >
+            검색
+          </button>
+
+          <button
+            onClick={() => {
+              setSearch("");
+              fetchStocks();
+            }}
+            className="rounded-xl border border-white/20 px-6 py-3 font-semibold text-white hover:bg-white/10"
+          >
+            기본으로
+          </button>
+        </div>
+
+        {loading && (
+          <div className="rounded-2xl bg-slate-900 p-6 text-center text-slate-300">
+            데이터를 불러오는 중...
+          </div>
+        )}
+
+        {!loading && stocks.length === 0 && (
+          <div className="rounded-2xl bg-slate-900 p-6 text-center text-slate-300">
+            검색 결과가 없습니다.
+          </div>
+        )}
 
         <div className="space-y-16">
           {stocks.map((stock) => (
